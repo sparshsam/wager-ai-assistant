@@ -1,0 +1,149 @@
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+    --card: 217.2 32.6% 17.5%;
+    --card-foreground: 210 40% 98%;
+    --popover: 217.2 32.6% 17.5%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 142.1 76.2% 41.1%;
+    --primary-foreground: 222.2 84% 4.9%;
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 72.2% 50.6%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 142.1 76.2% 41.1%;
+    --radius: 0.5rem;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'Inter', sans-serif;
+  }
+}
+
+/* Custom scrollbar styles for dark theme */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: hsl(var(--background));
+}
+
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--muted));
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground));
+}
+
+/* Animation for numeric counters */
+@keyframes countUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-count-up {
+  animation: countUp 0.5s ease-out;
+}
+
+/* Table styles */
+.data-table {
+  @apply border-collapse border-spacing-0;
+}
+
+.data-table th,
+.data-table td {
+  @apply border-b border-border px-4 py-3 text-left;
+}
+
+.data-table th {
+  @apply bg-muted font-semibold text-sm;
+}
+
+.data-table tbody tr:hover {
+  @apply bg-muted/50;
+}
+
+/* Form styles */
+.form-input {
+  @apply w-full px-3 py-2 bg-input border border-border rounded-md text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent;
+}
+
+.form-textarea {
+  @apply w-full px-3 py-2 bg-input border border-border rounded-md text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent resize-none;
+}
+
+/* Button variants */
+.btn-primary {
+  @apply bg-primary text-primary-foreground hover:bg-primary/90 px-4 py-2 rounded-md font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2;
+}
+
+.btn-secondary {
+  @apply bg-secondary text-secondary-foreground hover:bg-secondary/80 px-4 py-2 rounded-md font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2;
+}
+
+.btn-destructive {
+  @apply bg-destructive text-destructive-foreground hover:bg-destructive/90 px-4 py-2 rounded-md font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2;
+}
+
+/* Panel styles */
+.panel {
+  @apply bg-card border border-border rounded-lg p-6 shadow-sm;
+}
+
+.panel-header {
+  @apply text-xl font-semibold text-foreground mb-4 flex items-center gap-2;
+}
+
+/* Upload dropzone */
+.upload-dropzone {
+  @apply border-2 border-dashed border-muted-foreground/50 rounded-lg p-8 text-center hover:border-primary/50 transition-colors cursor-pointer;
+}
+
+.upload-dropzone.active {
+  @apply border-primary bg-primary/10;
+}
+
+/* Status indicators */
+.status-pending {
+  @apply bg-yellow-500/20 text-yellow-400 px-2 py-1 rounded-full text-xs font-medium;
+}
+
+.status-win {
+  @apply bg-green-500/20 text-green-400 px-2 py-1 rounded-full text-xs font-medium;
+}
+
+.status-loss {
+  @apply bg-red-500/20 text-red-400 px-2 py-1 rounded-full text-xs font-medium;
+}
+
+.status-push {
+  @apply bg-gray-500/20 text-gray-400 px-2 py-1 rounded-full text-xs font-medium;
+}

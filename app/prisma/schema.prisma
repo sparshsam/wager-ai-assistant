@@ -1,0 +1,268 @@
+
+generator client {
+    provider = "prisma-client-js"
+    binaryTargets = ["native", "linux-musl-arm64-openssl-3.0.x"]
+    output = "/home/ubuntu/wager-ai-assistant/app/node_modules/.prisma/client"
+}
+
+datasource db {
+    provider = "postgresql"
+    url      = env("DATABASE_URL")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model User {
+  id               String             @id @default(cuid())
+  name             String?
+  email            String             @unique
+  emailVerified    DateTime?
+  image            String?
+  password         String?
+  currentBankroll  Float?             @default(1000.0) // Starting bankroll
+  accounts         Account[]
+  sessions         Session[]
+  matches          Match[]
+  picks            Pick[]
+  bankrollHistory  BankrollHistory[]
+  uploadedData     UploadedData[]
+  leagueSchedules  LeagueSchedule[]
+  bettingScripts   BettingScript[]
+  matchupStats     MatchupStats[]
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model Match {
+  id           String   @id @default(cuid())
+  userId       String
+  date         DateTime
+  league       String
+  sport        String   @default("Unknown")
+  homeTeam     String
+  awayTeam     String
+  venue        String?
+  homeXG       Float?
+  awayXG       Float?
+  homeForm     String?
+  awayForm     String?
+  homeInjuries String?
+  awayInjuries String?
+  trends       String?
+  preview      String?
+  oddsSnapshot String?
+  selected     Boolean  @default(false)
+  // Enhanced fields for multi-sheet Excel data
+  fixtureData  String?  @db.Text // JSON string for fixture sheet data
+  statsData    String?  @db.Text // JSON string for stats sheet data
+  scriptData   String?  @db.Text // JSON string for betting script data
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  picks        Pick[]
+}
+
+model Pick {
+  id               String   @id @default(cuid())
+  userId           String
+  matchId          String?
+  // Core betting information
+  entryId          String   @unique @default(cuid()) // For easy reference
+  date             DateTime @default(now())
+  sport            String
+  league           String
+  event            String   // Match/Event name
+  betType          String   // Moneyline, Spread, Total, etc.
+  selection        String   // Team/Player/Over/Under selection
+  line             String?  // Point spread or total line
+  oddsAmerican     String   // American odds format (-110, +150)
+  oddsDecimal      Float?   // Decimal odds format (1.91, 2.50)
+  stake            Float    // Bet amount
+  potentialWin     Float?   // Potential winnings
+  
+  // Results and tracking
+  result           String   @default("Pending") // Pending, Win, Loss, Push, Void
+  actualResult     String?  // Actual game result details
+  profitLoss       Float?   // Actual profit/loss amount
+  runningBankroll  Float?   // Bankroll after this bet
+  bankrollChange   Float?   // Change in bankroll
+  roi              Float?   // Return on investment percentage
+  
+  // Analysis and justification
+  cisGenerated     String?  @db.Text // AI-generated analysis
+  scriptSummary    String?  @db.Text // Betting script summary
+  justification    String?  @db.Text // Bet justification
+  confidence       Int?     // Confidence level 1-10
+  
+  // Legacy fields for backward compatibility
+  market           String?  // Deprecated - use betType
+  odds             String?  // Deprecated - use oddsAmerican
+  matchup          String?  // Deprecated - use event
+  
+  // Metadata
+  tags             String?  // Comma-separated tags
+  notes            String?  @db.Text // Additional notes
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  match            Match?   @relation(fields: [matchId], references: [id], onDelete: SetNull)
+  
+  @@index([userId, date])
+  @@index([sport, league])
+  @@index([result])
+}
+
+// New model for tracking bankroll history
+model BankrollHistory {
+  id              String   @id @default(cuid())
+  userId          String
+  date            DateTime @default(now())
+  amount          Float    // Bankroll amount at this point
+  change          Float?   // Change from previous entry
+  changeType      String   // Deposit, Withdrawal, Bet_Win, Bet_Loss, Adjustment
+  description     String?  // Description of the change
+  relatedPickId   String?  // Related pick if applicable
+  createdAt       DateTime @default(now())
+  
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId, date])
+}
+
+// New model for uploaded Excel data management (legacy)
+model UploadedData {
+  id              String   @id @default(cuid())
+  userId          String
+  fileName        String
+  sport           String
+  league          String
+  uploadDate      DateTime @default(now())
+  // Store parsed data from each sheet
+  bettingScript   String?  @db.Text // JSON string of betting script rules
+  fixtures        String?  @db.Text // JSON string of fixtures/results
+  stats           String?  @db.Text // JSON string of stats data
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId, sport, league])
+}
+
+// New model for league schedule management
+model LeagueSchedule {
+  id              String   @id @default(cuid())
+  userId          String
+  date            DateTime
+  homeTeam        String
+  awayTeam        String
+  league          String
+  sport           String
+  time            String?  // Match time in string format
+  venue           String?
+  status          String   @default("Scheduled") // Scheduled, InProgress, Completed, Postponed
+  homeScore       Int?
+  awayScore       Int?
+  // Additional metadata
+  season          String?
+  round           String?
+  matchweek       Int?
+  competition     String?
+  isSelected      Boolean  @default(false)
+  notes           String?  @db.Text
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId, date])
+  @@index([league, sport])
+  @@index([date, league])
+}
+
+// New model for betting script management
+model BettingScript {
+  id              String   @id @default(cuid())
+  userId          String
+  league          String   @unique // Each league has one active script
+  sport           String
+  fileName        String   // Original filename (e.g., "WNBA.txt")
+  content         String   @db.Text // The actual script content
+  description     String?  @db.Text // Optional description
+  version         String   @default("1.0")
+  isActive        Boolean  @default(true)
+  // Script metadata
+  rules           String?  @db.Text // JSON string of parsed rules
+  guidelines      String?  @db.Text // Specific guidelines
+  stakeLogic      String?  @db.Text // Stake calculation logic
+  riskManagement  String?  @db.Text // Risk management rules
+  lastUsed        DateTime?
+  timesUsed       Int      @default(0)
+  successRate     Float?   // Track performance
+  avgROI          Float?   // Average return on investment
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId, league])
+  @@index([sport, league])
+}
+
+// New model for manual stats input tracking
+model MatchupStats {
+  id              String   @id @default(cuid())
+  userId          String
+  matchId         String?  // Optional link to match
+  league          String
+  sport           String
+  homeTeam        String
+  awayTeam        String
+  statsContent    String   @db.Text // Manual stats input
+  statsType       String   @default("Manual") // Manual, Imported, API
+  source          String?  // Source of stats if applicable
+  isProcessed     Boolean  @default(false)
+  processingNotes String?  @db.Text
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId, league])
+  @@index([homeTeam, awayTeam])
+}
